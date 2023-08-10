@@ -15,14 +15,15 @@
   "author": "Rebecca Turner <me@re-becca.org> (http://re-becca.org/)",
   "license": "ISC",
   "dependencies": {
+    "@reason-dev/rtf-parser": "^1.4.2",
     "rtf-parser": "^1.0.4"
   },
   "devDependencies": {
-    "weallbehave": "*",
-    "weallcontribute": "*",
     "standard": "*",
     "standard-version": "*",
-    "tap": "*"
+    "tap": "*",
+    "weallbehave": "*",
+    "weallcontribute": "*"
   },
   "description": "Convert RTF to HTML in pure JavaScript.",
   "files": [
