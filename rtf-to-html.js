@@ -1,4 +1,9 @@
 "use strict";
+
+const { RTFA } = require("@reason-dev/rtf-parser/rtf-interpreter");
+const RTFParagraph = require("rtf-parser/rtf-paragraph");
+const RTFSpan = require("rtf-parser/rtf-span");
+
 module.exports = rtfToHTML;
 
 function outputTemplate(doc, defaults, content) {
@@ -25,7 +30,7 @@ function outputTemplate(doc, defaults, content) {
 }
 
 function rtfToHTML(doc, options) {
-  console.log("BEFORE: ", JSON.stringify(doc));
+  // console.log("BEFORE: ", JSON.stringify(doc));
   const defaults = Object.assign(
     {
       font: doc.style.font || { name: "Times", family: "roman" },
@@ -49,15 +54,38 @@ function rtfToHTML(doc, options) {
   );
   const content = doc.content
     .map((el) => {
-      console.log("ELEMENT :", el);
-      return el.href
-        ? renderA(el.content ? el : { content: [el], style: {} }, defaults)
-        : renderPara(
-            el.content ? el : { content: [para], style: {} },
-            defaults
-          );
+      // console.log("ELEMENT :", el);
+      const isP = el instanceof RTFParagraph;
+      const type = typeof el;
+      if (el.constructor.name === "RTFParagraph") {
+        return renderPara(el ? el : { content: [para], style: {} }, defaults);
+      } else if (el.constructor.name === "RTFA") {
+        if (el.content && el.content.length > 0) {
+          console.log("THIS LINK HAS CONTENT");
+        } else {
+          return renderA(el, defaults);
+        }
+      } else if (el.constructor.name === "RTFSpan") {
+        console.log("SPAN");
+        if (el.content.length && el.content.length > 0) {
+          console.log("THIS SPAN HAS CONTENT");
+        }
+        return renderSpan(el, defaults);
+      } else {
+        console.log("ELSE: ", el);
+      }
+
+      // return el.href
+      //   ? renderA(el.content ? el : { content: [el], style: {} }, defaults)
+      //   : renderPara(
+      //       el.content ? el : { content: [para], style: {} },
+      //       defaults
+      //     );
     })
-    .filter((html) => html != null)
+    .filter((html) => {
+      console.log("HTML: ", html);
+      return html != null;
+    })
     .join(defaults.paraBreaks);
   return defaults.template(doc, defaults, content);
 }
@@ -178,34 +206,58 @@ function renderPara(para, defaults) {
     .map((el) => (el.href ? renderA(el, pdefaults) : renderSpan(el, pdefaults)))
     .join("")}${tags.close}</${paraTag}>`;
 }
+// function renderA(para, defaults) {
+//   console.log("para: ", para);
+//   if (!para.content || para.content.length === 0) return;
+//   const style = CSS(para, defaults);
+//   const tags = styleTags(para, defaults);
+//   const pdefaults = Object.assign({}, defaults);
+//   for (let item of Object.keys(para.style)) {
+//     if (para.style[item] != null) pdefaults[item] = para.style[item];
+//   }
+//   const elTag =
+//     typeof para.content[0].href !== "undefined" ? "a" : defaults.paraTag;
+//   // console.log("PARATAG: ", paraTag);
+//   const outputElement = `<${elTag} href=${para.content[0].href} ${
+//     style ? ' style="' + style + '"' : ""
+//   }>${tags.open}${
+//     para.content.length === 1
+//       ? para.content[0].value
+//       : para.content
+//           .map((el) =>
+//             el.href ? renderA(el, pdefaults) : renderSpan(el, pdefaults)
+//           )
+//           .join("")
+//   }${tags.close}</${elTag}>`;
+
+//   return outputElement;
+// }
 function renderA(para, defaults) {
   console.log("para: ", para);
-  if (!para.content || para.content.length === 0) return;
-  const style = CSS(para, defaults);
+  const el = para.content ? para.content[0] : para;
+  // if (!para.content || para.content.length === 0) return;
+  const style = CSS(el, defaults);
   const tags = styleTags(para, defaults);
   const pdefaults = Object.assign({}, defaults);
   for (let item of Object.keys(para.style)) {
     if (para.style[item] != null) pdefaults[item] = para.style[item];
   }
-  const elTag =
-    typeof para.content[0].href !== "undefined" ? "a" : defaults.paraTag;
+  const elTag = el.href ? "a" : defaults.paraTag;
   // console.log("PARATAG: ", paraTag);
-  const outputElement = `<${elTag} href=${para.content[0].href} ${
-    style ? ' style="' + style + '"' : ""
-  }>${tags.open}${
-    para.content.length === 1
-      ? para.content[0].value
-      : para.content
-          .map((el) =>
-            el.href ? renderA(el, pdefaults) : renderSpan(el, pdefaults)
-          )
-          .join("")
-  }${tags.close}</${elTag}>`;
+  // for (let el of para.content) {
+  //   const outputElement = `<${elTag} href=${el.href} ${
+  //     style ? ' style="' + style + '"' : ""
+  //   }>${el.value}</${elTag}>`;
+  // }
+  const outputElement = `<${elTag} href=${el.href} ${
+    style ? ` style="${style} "` : ""
+  }>${tags.open}${el.value}${tags.close}</${elTag}>`;
 
   return outputElement;
 }
 
 function renderSpan(span, defaults) {
+  console.log("SPAN VALUE: ", value);
   const style = CSS(span, defaults);
   const tags = styleTags(span, defaults);
   const value = `${tags.open}${span.value}${tags.close}`;

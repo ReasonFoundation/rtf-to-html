@@ -15,7 +15,7 @@
   "author": "Rebecca Turner <me@re-becca.org> (http://re-becca.org/)",
   "license": "ISC",
   "dependencies": {
-    "@reason-dev/rtf-parser": "^1.4.2",
+    "@reason-dev/rtf-parser": "^2.0.0",
     "rtf-parser": "^1.0.4"
   },
   "devDependencies": {
